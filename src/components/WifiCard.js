@@ -37,9 +37,11 @@ export const WifiCard = (props) => {
     const password = !props.settings.encryptionMode
       ? ''
       : escape(props.settings.password);
-    setQrvalue(
-      `WIFI:T:${props.settings.encryptionMode};S:${ssid};P:${password};H:${props.settings.hiddenSSID};`
-    );
+    const qrval =
+      props.settings.encryptionMode === 'WPA2-EAP'
+        ? `WIFI:T:${props.settings.encryptionMode};S:${ssid};P:${password};H:${props.settings.hiddenSSID};E:${props.settings.eapMethod};I:${props.settings.eapIdentity};;`
+        : `WIFI:T:${props.settings.encryptionMode};S:${ssid};P:${password};H:${props.settings.hiddenSSID};;`;
+    setQrvalue(qrval);
   }, [props.settings]);
 
   const portraitWidth = () => {
@@ -53,6 +55,15 @@ export const WifiCard = (props) => {
     return hiddenPassword ? '' : t('wifi.password');
   };
 
+  const eapIdentityFieldLabel = () => {
+    const hiddenIdentity = props.settings.encryptionMode !== 'WPA2-EAP';
+    return hiddenIdentity ? '' : t('wifi.identity');
+  };
+
+  const eapMethodFieldLabel = () => {
+    return !eapIdentityFieldLabel() ? '' : t('wifi.encryption.eapMethod');
+  };
+
   return (
     <Pane>
       <Card
@@ -63,8 +74,9 @@ export const WifiCard = (props) => {
         <Pane display="flex" paddingBottom={12}>
           <img alt="icon" src={logo} width="24" height="24" />
           <Heading
-            paddingLeft={10}
             size={700}
+            paddingRight={10}
+            paddingLeft={10}
             textAlign={props.settings.portrait ? 'center' : 'unset'}
           >
             {t('wifi.login')}
@@ -100,6 +112,38 @@ export const WifiCard = (props) => {
               validationMessage={!!props.ssidError && props.ssidError}
             />
             <TextareaField
+              id="eapmethod"
+              type="text"
+              marginBottom={5}
+              readOnly={true}
+              spellCheck={false}
+              className={`
+                ${props.settings.encryptionMode !== 'WPA2-EAP' && 'hidden'}
+              `}
+              label={eapMethodFieldLabel()}
+              value={props.settings.eapMethod}
+            />
+            <TextareaField
+              id="identity"
+              type="text"
+              marginBottom={5}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              className={`
+                ${props.settings.encryptionMode !== 'WPA2-EAP' && 'hidden'}
+              `}
+              label={eapIdentityFieldLabel()}
+              placeholder={t('wifi.identity.placeholder')}
+              value={props.settings.eapIdentity}
+              onChange={(e) => props.onEapIdentityChange(e.target.value)}
+              isInvalid={!!props.eapIdentityError}
+              validationMessage={
+                !!props.eapIdentityError && props.eapIdentityError
+              }
+            />
+            <TextareaField
               id="password"
               type="text"
               maxLength="63"
@@ -132,7 +176,7 @@ export const WifiCard = (props) => {
         <Paragraph>
           <CameraIcon />
           <MobilePhoneIcon />
-          <Text size={300} paddingLeft={8}>
+          <Text size={300} paddingRight={8} paddingLeft={8}>
             {t('wifi.tip')}
           </Text>
         </Paragraph>
